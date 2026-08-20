@@ -39,19 +39,24 @@
 
 ## 3. Llamada de voz (frontend)
 
-- [ ] 3.1 Test: al completar el emparejamiento y conceder permiso de micrófono, la
+- [x] 3.1 Test: al completar el emparejamiento y conceder permiso de micrófono, la
       llamada queda activa (mock de `RTCPeerConnection`/`getUserMedia`).
-- [ ] 3.2 Implementación: `call.element.ts` + `call.service.ts` — establecimiento de la
+- [x] 3.2 Implementación: `call.element.ts` + `call.service.ts` — establecimiento de la
       conexión WebRTC tras el intercambio de señalización.
-- [ ] 3.3 Test: permiso de micrófono denegado muestra el estado correspondiente, sin
+- [x] 3.3 Test: permiso de micrófono denegado muestra el estado correspondiente, sin
       quedar cargando indefinidamente.
-- [ ] 3.4 Implementación: manejo de permiso denegado.
-- [ ] 3.5 Test: colgar desde cualquiera de los dos lados termina la llamada y vuelve a
-      la pantalla de emparejamiento.
-- [ ] 3.6 Implementación: botón de colgar + limpieza de la conexión.
-- [ ] 3.7 Test: fallo al establecer la conexión directa (P2P no alcanzable) muestra el
+- [x] 3.4 Implementación: manejo de permiso denegado.
+- [x] 3.5 Test: colgar desde cualquiera de los dos lados termina la llamada y vuelve a
+      la pantalla de emparejamiento. Cubre tanto colgar propio como el mensaje
+      `peer-left` del servidor (el otro lado cuelga o expira su margen de gracia) —
+      este segundo caso se ignoraba en la primera pasada, corregido antes de cerrar.
+- [x] 3.6 Implementación: botón de colgar + limpieza de la conexión. `call-screen` se
+      sustituye a sí mismo por un `pairing-screen` nuevo al terminar, sin depender de
+      un orquestador superior.
+- [x] 3.7 Test: fallo al establecer la conexión directa (P2P no alcanzable) muestra el
       mensaje correspondiente.
-- [ ] 3.8 Implementación: manejo de ese fallo (timeout de conexión ICE sin éxito).
+- [x] 3.8 Implementación: manejo de ese fallo (vía `connectionState === "failed"` nativo
+      de `RTCPeerConnection`, sin timeout propio adicional).
 
 ## 4. Selección de red y reconexión
 

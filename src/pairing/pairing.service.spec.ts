@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { connectToSignaling } from "./pairing.service";
-import type { ServerMessage } from "./pairing.types";
+import type { SignalingMessage } from "./pairing.types";
 
 class FakeWebSocket extends EventTarget {
   sent: string[] = [];
@@ -14,7 +14,7 @@ class FakeWebSocket extends EventTarget {
     this.closed = true;
   }
 
-  emitMessage(payload: ServerMessage): void {
+  emitMessage(payload: SignalingMessage): void {
     this.dispatchEvent(new MessageEvent("message", { data: JSON.stringify(payload) }));
   }
 }

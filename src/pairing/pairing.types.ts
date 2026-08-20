@@ -1,22 +1,22 @@
-/** Mensajes que el servicio de señalización puede enviar a un cliente. */
-export type ServerMessage =
+/**
+ * Mensajes que viajan por la conexión de señalización: los de control los
+ * emite el propio servidor; offer/answer/ice-candidate los emite el otro
+ * participante y el servidor solo los reenvía sin interpretarlos.
+ */
+export type SignalingMessage =
   | { type: "created"; code: string; token: string }
   | { type: "peer-joined"; token?: string }
   | { type: "peer-reconnected" }
   | { type: "reconnecting" }
   | { type: "peer-left"; reason: string }
-  | { type: "error"; reason: "not_found" | "full" | "rate_limited" | "internal" };
+  | { type: "error"; reason: "not_found" | "full" | "rate_limited" | "internal" }
+  | { type: "offer"; sdp: string }
+  | { type: "answer"; sdp: string }
+  | { type: "ice-candidate"; candidate: RTCIceCandidateInit };
 
 /** Conexión abierta hacia el servicio de señalización. */
 export interface SignalingConnection {
-  onMessage(handler: (message: ServerMessage) => void): void;
+  onMessage(handler: (message: SignalingMessage) => void): void;
   send(message: unknown): void;
   close(): void;
 }
-
-/** Estado visible de la pantalla de emparejamiento. */
-export type PairingState =
-  | { status: "idle" }
-  | { status: "waiting-for-peer"; code: string }
-  | { status: "paired" }
-  | { status: "error"; reason: ServerMessage extends { type: "error"; reason: infer R } ? R : never };

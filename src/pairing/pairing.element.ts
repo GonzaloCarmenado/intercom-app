@@ -1,7 +1,9 @@
+import "../call/call.element";
+import type { CallRole } from "../call/call.types";
 import styles from "./pairing.element.css?inline";
 import { connectToSignaling } from "./pairing.service";
 import { buildSignalingUrl } from "./pairing.transform";
-import type { ServerMessage, SignalingConnection } from "./pairing.types";
+import type { SignalingMessage, SignalingConnection } from "./pairing.types";
 
 const DEFAULT_SIGNALING_URL = "ws://localhost:8090/ws";
 
@@ -25,6 +27,7 @@ template.innerHTML = `
 /** Pantalla de emparejamiento: crear una sala o unirse con un código. */
 export class PairingScreenElement extends HTMLElement {
   private connection: SignalingConnection | null = null;
+  private callRole: CallRole | null = null;
 
   constructor() {
     super();
@@ -36,7 +39,7 @@ export class PairingScreenElement extends HTMLElement {
     this.shadowRoot
       ?.querySelector<HTMLButtonElement>('[data-cy="pairing-button-crear"]')
       ?.addEventListener("click", () => {
-        this.startConnection(buildSignalingUrl(signalingBaseUrl(), {}));
+        this.startConnection(buildSignalingUrl(signalingBaseUrl(), {}), "offerer");
       });
 
     this.shadowRoot
@@ -44,7 +47,7 @@ export class PairingScreenElement extends HTMLElement {
       ?.addEventListener("click", () => {
         const code = this.codeInput()?.value.trim();
         if (!code) return;
-        this.startConnection(buildSignalingUrl(signalingBaseUrl(), { code }));
+        this.startConnection(buildSignalingUrl(signalingBaseUrl(), { code }), "answerer");
       });
   }
 
@@ -52,13 +55,16 @@ export class PairingScreenElement extends HTMLElement {
     return this.shadowRoot?.querySelector<HTMLInputElement>('[data-cy="pairing-input-codigo"]');
   }
 
-  private startConnection(url: string): void {
+  private startConnection(url: string, role: CallRole): void {
     this.hideError();
+    this.callRole = role;
     this.connection = connectToSignaling(url);
-    this.connection.onMessage((message) => { this.handleMessage(message); });
+    this.connection.onMessage((message) => {
+      this.handleMessage(message);
+    });
   }
 
-  private handleMessage(message: ServerMessage): void {
+  private handleMessage(message: SignalingMessage): void {
     switch (message.type) {
       case "created":
         this.showCode(message.code);
@@ -67,12 +73,28 @@ export class PairingScreenElement extends HTMLElement {
         this.showError(message.reason);
         break;
       case "peer-joined":
+        this.transitionToCall();
+        break;
       case "peer-reconnected":
       case "reconnecting":
       case "peer-left":
-        // Estados de la llamada activa: gestionados por call.element.ts (bloque 3).
+      case "offer":
+      case "answer":
+      case "ice-candidate":
+        // Señalización WebRTC y estados de llamada activa: no llegan aquí en
+        // condiciones normales porque ya nos hemos transicionado a
+        // call.element.ts en cuanto "peer-joined" emparejó la sala.
         break;
     }
+  }
+
+  private transitionToCall(): void {
+    if (!this.connection || !this.callRole) return;
+    const callScreen = document.createElement("call-screen") as HTMLElement & {
+      start: (setup: { connection: SignalingConnection; role: CallRole }) => void;
+    };
+    this.replaceWith(callScreen);
+    callScreen.start({ connection: this.connection, role: this.callRole });
   }
 
   private showCode(code: string): void {

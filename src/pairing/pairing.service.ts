@@ -1,4 +1,4 @@
-import type { ServerMessage, SignalingConnection } from "./pairing.types";
+import type { SignalingMessage, SignalingConnection } from "./pairing.types";
 
 /** Permite inyectar un WebSocket falso en los tests. */
 export type WebSocketFactory = (url: string) => WebSocket;
@@ -15,11 +15,11 @@ export function connectToSignaling(
   factory: WebSocketFactory = defaultFactory,
 ): SignalingConnection {
   const ws = factory(url);
-  const handlers: ((message: ServerMessage) => void)[] = [];
+  const handlers: ((message: SignalingMessage) => void)[] = [];
 
   ws.addEventListener("message", (event) => {
     const raw = (event as MessageEvent<string>).data;
-    const message = JSON.parse(raw) as ServerMessage;
+    const message = JSON.parse(raw) as SignalingMessage;
     for (const handler of handlers) {
       handler(message);
     }

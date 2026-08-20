@@ -27,15 +27,27 @@
   PostgreSQL de moto-routes.
 
 ## Próximo hito
-- Continuar `/opsx:apply` de `llamada-voip-piloto-copiloto` en la tarea 1 (servicio
-  de señalización en Go).
+- Continuar `/opsx:apply` de `llamada-voip-piloto-copiloto` en el bloque 4 (selección
+  de red y reconexión).
 
 ## Progreso de `llamada-voip-piloto-copiloto`
-- Tarea 0.1 (spike bloqueante) completada el 2026-08-20 en dispositivo Android real
-  (realme GT 2 Pro): `getUserMedia`/`RTCPeerConnection` funcionan en la WebView de
-  Tauri. Detalle y causa del "Permission denied" inicial (faltaba
-  `MODIFY_AUDIO_SETTINGS` en el manifest junto a `RECORD_AUDIO`) en `design.md` del
-  cambio. No hizo falta código Kotlin nuevo — wry ya trae el puente de permisos.
+- Bloques 0-3 completados el 2026-08-20 (spike, servicio de señalización en Go,
+  pantalla de emparejamiento, pantalla de llamada). 39 tests (Vitest) + 17 tests (Go)
+  en verde, ESLint y `tsc --noEmit` limpios.
+- Tarea 0.1 (spike bloqueante) completada en dispositivo Android real (realme GT 2
+  Pro): `getUserMedia`/`RTCPeerConnection` funcionan en la WebView de Tauri. Causa del
+  "Permission denied" inicial: faltaba `MODIFY_AUDIO_SETTINGS` en el manifest junto a
+  `RECORD_AUDIO`. No hizo falta código Kotlin nuevo — wry ya trae el puente de permisos.
+- Bloque 1: `signaling/` (módulo Go independiente) — sala en memoria con TTL, WebSocket
+  con reenvío de señalización, rate limiting por IP, colgar + reconexión con margen de
+  gracia de 60s vía token por participante (ADR-002, gap real encontrado en 1.9/1.10).
+- Bloques 2-3: `src/pairing/` y `src/call/` (Web Components). Al no existir todavía
+  Vitest/ESLint en el proyecto, se montaron en el bloque 2 (config igual que
+  moto-routes: strictTypeChecked + stylistic + jsdoc, cobertura mínima 80%).
+  `pairing-screen` se sustituye a sí mismo por `call-screen` en cuanto se empareja
+  (mensaje `peer-joined`), y `call-screen` hace lo inverso al colgar o al recibir
+  `peer-left` del servidor — sin componente orquestador superior, cada pantalla se
+  sustituye a sí misma en el DOM.
 - Entorno de desarrollo Android en esta máquina: JDK de Android Studio es la 25, que
   Gradle 8.14.3 no soporta — hay que fijar `JAVA_HOME` a `C:\Program Files\Java\jdk-24`
   al lanzar `tauri android dev` (no versionar esa ruta, es local de esta máquina).

@@ -1,0 +1,33 @@
+@import "../shared/styles/tokens.css";
+
+:host {
+  display: block;
+  font-family: var(--font-ui);
+  color: var(--color-text);
+  background: var(--color-bg);
+  padding: var(--space-lg);
+  text-align: center;
+}
+
+.status {
+  font-size: 1.5rem;
+  margin: var(--space-lg) 0;
+}
+
+.error {
+  color: var(--color-error);
+}
+
+button {
+  min-height: var(--hitbox-min);
+  min-width: var(--hitbox-min);
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--color-error);
+  color: var(--color-text);
+  font-size: 1rem;
+}
+
+[hidden] {
+  display: none;
+}
