@@ -86,12 +86,18 @@
 
 ## 5. Seguridad y configuración Tauri
 
-- [ ] 5.1 Añadir el host `wss://` de señalización y los hosts STUN usados a
-      `app.security.csp.connect-src` en `tauri.conf.json`.
-- [ ] 5.2 Revisar permisos Android necesarios (micrófono) en `src-tauri/capabilities/`
-      y manifest.
-- [ ] 5.3 Revisión final del diff en busca de cualquier secreto/host hardcodeado antes
-      de dar la tarea por cerrada.
+- [x] 5.1 Añadir el host `wss://` de señalización y los hosts STUN usados a
+      `app.security.csp.connect-src` en `tauri.conf.json`. Usa el patrón `wss://*.ts.net`
+      en vez del host exacto hasta que el bloque 6 confirme el real (ver Open Questions
+      de design.md) — también añadido `ipc:`/`http://ipc.localhost` (IPC de Tauri, se
+      bloquearía sin esto con CSP estricta, mismo hallazgo que ya tenía moto-routes).
+- [x] 5.2 Revisar permisos Android necesarios (micrófono) en `src-tauri/capabilities/`
+      y manifest. Ya cubierto desde el spike de la tarea 0.1 (`RECORD_AUDIO` +
+      `MODIFY_AUDIO_SETTINGS`); confirmado que no hace falta ningún permiso Tauri
+      adicional en `capabilities/default.json` porque `getUserMedia` es una API web
+      nativa, no un plugin Tauri.
+- [x] 5.3 Revisión final del diff en busca de cualquier secreto/host hardcodeado antes
+      de dar la tarea por cerrada. Sin hallazgos.
 
 ## 6. Servicio de señalización: infraestructura y despliegue
 

@@ -165,4 +165,8 @@ moto-routes. Rollback = `docker compose down` de este servicio, no afecta a los 
 - Puerto/ruta exactos para exponer el servicio de señalización vía Tailscale Funnel en
   el servidor real: se confirma inspeccionando la configuración de Funnel ya activa
   para `apps/api` durante `/opsx:apply`, no cambia ni el enfoque ni las specs ni el
-  desglose de tareas.
+  desglose de tareas. Mientras tanto, `connect-src` en `tauri.conf.json` (tarea 5.1)
+  usa el patrón `wss://*.ts.net` en vez del host exacto — se estrecha al host real
+  (`wss://debian.taildf3dab.ts.net` o el que corresponda) en cuanto el bloque 6 lo
+  confirme; hasta entonces sigue la regla de "host exacto" del proyecto de forma
+  aproximada, no exacta.
