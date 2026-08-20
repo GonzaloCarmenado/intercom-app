@@ -1,0 +1,23 @@
+/**
+ * Tokens de diseño compartidos. Placeholder inicial sin dirección visual
+ * definida todavía — cualquier color/espaciado/tipografía nuevo va aquí,
+ * nunca hardcodeado en un *.element.css.
+ */
+:root {
+  --color-bg: #101014;
+  --color-surface: #1c1c22;
+  --color-text: #f2f2f5;
+  --color-text-muted: #9a9aa5;
+  --color-accent: #4f8cff;
+  --color-error: #ff5c5c;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+
+  --font-ui: system-ui, sans-serif;
+
+  --hitbox-min: 56px;
+  --radius-md: 8px;
+}

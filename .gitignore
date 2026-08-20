@@ -11,6 +11,12 @@ node_modules
 dist
 dist-ssr
 *.local
+coverage
+.claude/scheduled_tasks.lock
+
+# Secretos de despliegue — nunca versionados, solo la plantilla .env.prod.example
+infra/docker/.env.prod
+scripts/.env.deploy.local
 
 # Editor directories and files
 .vscode/*

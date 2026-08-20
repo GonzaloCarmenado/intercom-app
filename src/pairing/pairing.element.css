@@ -1,0 +1,50 @@
+@import "../shared/styles/tokens.css";
+
+:host {
+  display: block;
+  font-family: var(--font-ui);
+  color: var(--color-text);
+  background: var(--color-bg);
+  padding: var(--space-lg);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+button {
+  min-height: var(--hitbox-min);
+  min-width: var(--hitbox-min);
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--color-accent);
+  color: var(--color-text);
+  font-size: 1rem;
+}
+
+input {
+  min-height: var(--hitbox-min);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-text-muted);
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: 0 var(--space-sm);
+  font-size: 1rem;
+}
+
+.code-display {
+  font-size: 2rem;
+  letter-spacing: 0.2em;
+  text-align: center;
+  margin: var(--space-md) 0;
+}
+
+.error {
+  color: var(--color-error);
+}
+
+[hidden] {
+  display: none;
+}

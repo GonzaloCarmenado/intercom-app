@@ -1,0 +1,17 @@
+services:
+  signaling:
+    build:
+      context: ../../signaling
+    # Solo loopback: la única vía de entrada real es Tailscale Funnel, que
+    # hace de proxy local a este puerto (ver design.md). No hace falta
+    # exponerlo en 0.0.0.0 ni en la LAN del servidor.
+    ports:
+      - "127.0.0.1:8090:8090"
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    # Límites explícitos para que un fallo de este servicio (fuga de
+    # memoria, bucle) no pueda hambrear a la API de moto-routes en el mismo
+    # servidor — ver design.md, "Riesgos".
+    mem_limit: 128m
+    cpus: 0.5
