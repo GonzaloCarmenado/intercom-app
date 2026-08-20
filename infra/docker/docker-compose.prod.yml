@@ -1,3 +1,11 @@
+# Nombre de proyecto explícito: por defecto Docker Compose lo deriva del
+# nombre del directorio contenedor ("docker"), que coincide con el de
+# moto-routes al vivir ambos en infra/docker/ — sin esto, Compose trata los
+# contenedores de los dos repos como del mismo "proyecto" (se vio como aviso
+# de "orphan container docker-api-1" al desplegar por primera vez), con
+# riesgo real de que un `docker compose down` en un repo afecte al otro.
+name: intercom-signaling
+
 services:
   signaling:
     build:
