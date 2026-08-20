@@ -1,6 +1,6 @@
 ## 0. Spike de riesgo (bloqueante, no-TDD)
 
-- [ ] 0.1 Verificar en un Android real, dentro del WebView de Tauri, que `getUserMedia`
+- [x] 0.1 Verificar en un Android real, dentro del WebView de Tauri, que `getUserMedia`
       pide permiso de micrófono correctamente y que `RTCPeerConnection` consigue
       establecer una conexión de audio entre dos pestañas/dispositivos de prueba. Si
       falla, volver a `design.md` antes de continuar — no seguir con el resto de tareas

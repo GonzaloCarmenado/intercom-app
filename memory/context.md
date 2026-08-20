@@ -27,5 +27,18 @@
   PostgreSQL de moto-routes.
 
 ## Próximo hito
-- Generar proposal/specs/design/tasks del cambio `llamada-voip-piloto-copiloto` con
-  `openspec new change` y avanzar a `/opsx:apply`.
+- Continuar `/opsx:apply` de `llamada-voip-piloto-copiloto` en la tarea 1 (servicio
+  de señalización en Go).
+
+## Progreso de `llamada-voip-piloto-copiloto`
+- Tarea 0.1 (spike bloqueante) completada el 2026-08-20 en dispositivo Android real
+  (realme GT 2 Pro): `getUserMedia`/`RTCPeerConnection` funcionan en la WebView de
+  Tauri. Detalle y causa del "Permission denied" inicial (faltaba
+  `MODIFY_AUDIO_SETTINGS` en el manifest junto a `RECORD_AUDIO`) en `design.md` del
+  cambio. No hizo falta código Kotlin nuevo — wry ya trae el puente de permisos.
+- Entorno de desarrollo Android en esta máquina: JDK de Android Studio es la 25, que
+  Gradle 8.14.3 no soporta — hay que fijar `JAVA_HOME` a `C:\Program Files\Java\jdk-24`
+  al lanzar `tauri android dev` (no versionar esa ruta, es local de esta máquina).
+  Además, lanzar ese comando desde Bash pasa por el hook `rtk`, que se queda colgado
+  sin producir salida cuando se combina con un `JAVA_HOME=...` inline — usar el
+  tool de PowerShell para `tauri android dev`, no Bash.

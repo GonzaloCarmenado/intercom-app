@@ -109,9 +109,15 @@ el redeploy de uno nunca dependa del otro.
 
 ## Risks / Trade-offs
 
-- **[Riesgo] Permiso de micrófono en el WebView de Android puede no comportarse como
-  en un navegador normal** → Mitigación: spike de verificación en dispositivo real
-  como primera tarea, antes de construir señalización o UI encima.
+- **[Resuelto] Permiso de micrófono en el WebView de Android** → verificado en
+  dispositivo real (spike, tarea 0.1): `getUserMedia`/`RTCPeerConnection` funcionan.
+  wry (librería de WebView de Tauri) ya trae el puente `onPermissionRequest` que
+  pide `RECORD_AUDIO` vía el flujo estándar de permisos de Android — no hizo falta
+  código Kotlin nuevo. El único ajuste necesario fue declarar en
+  `AndroidManifest.xml` tanto `RECORD_AUDIO` como `MODIFY_AUDIO_SETTINGS` (wry pide
+  ambos como grupo para audio; si uno de los dos no está declarado, la petición
+  combinada se deniega entera y `getUserMedia` falla con "Permission denied" sin
+  mostrar ningún diálogo).
 - **[Riesgo] Sin TURN propio, llamadas detrás de NAT simétrico/CGNAT estricto pueden no
   conectar** → Mitigación: fallo visible y explícito al usuario (spec: "No se puede
   establecer conexión directa por restricciones de red"); TURN autoalojado queda como
