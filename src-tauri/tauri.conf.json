@@ -19,7 +19,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' ipc: http://ipc.localhost ws://localhost:8090 wss://*.ts.net stun:stun.l.google.com:19302 stun:stun.cloudflare.com:3478"
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' ipc: http://ipc.localhost ws://localhost:8090 wss://debian.taildf3dab.ts.net stun:stun.l.google.com:19302 stun:stun.cloudflare.com:3478"
     }
   },
   "bundle": {

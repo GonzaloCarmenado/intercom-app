@@ -105,3 +105,38 @@
   sí funciona con las APIs web — es solo la granularidad dentro de "datos móviles"
   la que queda limitada. Detalle en `openspec/changes/llamada-voip-piloto-copiloto/`
   (`design.md` y `tasks.md`, tarea 4.1).
+
+## ADR-004: `llamada-voip-piloto-copiloto` — nombre de proyecto Docker Compose explícito (`intercom-signaling`), y ruta de Funnel por path en vez de puerto nuevo
+
+- **Fecha**: 2026-08-20
+- **Estado**: Aceptada
+- **Contexto**: Al desplegar de verdad en el servidor compartido con moto-routes
+  (tarea 6.6), Docker Compose avisó de un "orphan container docker-api-1" al
+  levantar el stack de este repo. Causa real: sin un nombre de proyecto explícito,
+  Compose lo deriva del nombre del directorio que contiene el compose file
+  (`docker`, porque el fichero vive en `infra/docker/docker-compose.prod.yml` en
+  los dos repos) — ambos despliegues acabaron bajo el mismo namespace de proyecto
+  por accidente, pese a ser repos y directorios de trabajo distintos. No llegó a
+  tocar el contenedor de moto-routes (Compose solo avisa de huérfanos, no los
+  toca sin `--remove-orphans`), pero un `docker compose down` futuro en cualquiera
+  de los dos repos sí podría haberlo hecho.
+- **Decisión**:
+  1. `name: intercom-signaling` explícito en `infra/docker/docker-compose.prod.yml`
+     de este repo — namespacing garantizado independientemente del nombre del
+     directorio contenedor.
+  2. Exposición pública vía Tailscale Funnel por **path**, no por puerto nuevo:
+     `tailscale funnel --set-path /intercom-ws http://127.0.0.1:8090`, coexistiendo
+     con la ruta raíz `/` que ya usa `apps/api` de moto-routes en el mismo dominio
+     Funnel (`https://debian.taildf3dab.ts.net`), sin tocar esa configuración
+     existente. URL real: `wss://debian.taildf3dab.ts.net/intercom-ws/ws`.
+- **Alternativas consideradas**: exponer en un puerto Funnel distinto (8443 o
+  10000, los otros puertos que Funnel permite) — descartado: algunas redes
+  móviles/corporativas filtran puertos no estándar más agresivamente que el 443,
+  y este proyecto ya prioriza "funciona en cualquier red de datos" (ver contexto
+  del proyecto). Renombrar el directorio `infra/docker/` en este repo para evitar
+  la colisión de nombres — descartado: rompería la paridad de convención con
+  moto-routes sin arreglar la causa real (la ausencia de un nombre explícito).
+- **Consecuencias**: cualquier cambio futuro de infraestructura en este repo debe
+  mantener `name:` en el compose. Si moto-routes alguna vez necesita lo mismo
+  (nombre de proyecto explícito), es una mejora a proponer allí, no algo que este
+  cambio deba ni pueda arreglar por su cuenta.
