@@ -29,12 +29,13 @@
 
 ## 2. Emparejamiento (frontend)
 
-- [ ] 2.1 Test: pantalla de emparejamiento muestra un código al crear sala.
-- [ ] 2.2 Implementación: `pairing.element.ts` + `pairing.service.ts` (crear sala, unirse
+- [x] 2.1 Test: pantalla de emparejamiento muestra un código al crear sala.
+- [x] 2.2 Implementación: `pairing.element.ts` + `pairing.service.ts` (crear sala, unirse
       con código tecleado), `data-cy` en cada elemento interactivo.
-- [ ] 2.3 Test: código inválido/caducado o sala ocupada muestra el mensaje de error
+- [x] 2.3 Test: código inválido/caducado o sala ocupada muestra el mensaje de error
       correspondiente y permite generar/pedir uno nuevo.
-- [ ] 2.4 Implementación: manejo de esos estados de error en la UI.
+- [x] 2.4 Implementación: manejo de esos estados de error en la UI. Añadido Vitest +
+      ESLint (no existían en el proyecto todavía) para poder cumplir el gate de apply.
 
 ## 3. Llamada de voz (frontend)
 
