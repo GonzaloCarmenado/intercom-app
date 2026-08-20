@@ -8,9 +8,6 @@ Este proyecto sigue **Spec-Driven Development con OpenSpec**. No se escribe cód
 
 **`openspec/config.yaml` es el source of truth del proyecto**: stack, convenciones, diseño, seguridad, disciplina TDD y el gate de revisión. La CLI lo inyecta automáticamente al escribir artefactos y al ejecutar `apply`/`archive`, así que no lo repitas aquí ni lo copies a ningún artefacto. Este fichero solo recoge lo que aplica **fuera** de ese flujo.
 
-> **Pendiente**: `openspec/config.yaml` todavía no tiene `context:`/`rules:` rellenos — se
-> generó vacío a propósito. Se completa en la próxima conversación, cuando se decida la
-> arquitectura de red/audio P2P y el resto de convenciones concretas.
 
 ## Flujo de Git
 
@@ -33,11 +30,8 @@ Este proyecto sigue **Spec-Driven Development con OpenSpec**. No se escribe cód
 
 ## Reglas de edición (aplican siempre, también en un fix suelto sin cambio abierto)
 
-> **Pendiente**: estas reglas son las mismas que en `moto-routes` (mismo stack de
-> frontend) pero conviene confirmarlas para este proyecto antes de darlas por definitivas.
-
 - **`data-cy` obligatorio**: todo elemento interactivo o localizable por un test lleva `data-cy="<contexto>-<tipo>-<accion>"` único, añadido en su propio `.element.ts` al crearlo. Nunca selectores de clase, ID o posición DOM en tests.
-- **Nunca hardcodear** color, fuente, espaciado, sombra ni radio: siempre `var(--token)` de una hoja de tokens compartida (ubicación a definir). Hitbox mínima a definir según uso previsto de la app.
+- **Nunca hardcodear** color, fuente, espaciado, sombra ni radio: siempre `var(--token)` de `src/shared/styles/tokens.css`.
 - **Sin CSS inline** salvo animación o posicionamiento dinámico justificado.
 - **Componentes compartidos** van en `src/shared/`, nunca duplicados entre dominios.
 - **JSDoc conciso** (qué y por qué, no cómo) en todo símbolo exportado.

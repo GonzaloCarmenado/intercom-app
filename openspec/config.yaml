@@ -1,32 +1,159 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Intercom App — la propia app actúa como intercomunicador de voz entre el piloto y el
+  copiloto de una misma moto (uno pegado al otro, no motos distintas en un grupo). No
+  integra ni sustituye ningún hardware de intercomunicador existente (tipo Cardo/Sena):
+  la comunicación completa vive en la app. Target prioritario: Android.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  Stack: TypeScript 5.7 strict + Vite 6 + Web Components nativos con Shadow DOM (sin
+  framework) en frontend; Rust + Tauri 2 en backend/móvil. Mismo patrón de separación de
+  ficheros que en el proyecto hermano moto-routes: .element.ts (componente) +
+  .element.css (estilos) + .service.ts (efectos/IO) + .transform.ts (lógica pura) +
+  .types.ts (tipos), cada uno con su .spec.ts al lado. Gestor: npm.
 
-# Per-operation guidance (optional)
-# Add advisory guidance for how apply and archive work should be conducted.
-# This is separate from artifact rules above.
-# Example:
-#   operations:
-#     apply:
-#       guidance:
-#         - Keep test summaries concise
-#     archive:
-#       guidance:
-#         - Summarize the archive outcome before finishing
+  Arquitectura de comunicación (decidida en la sesión de arranque, 2026-08-20):
+  - **Transporte de audio**: WebRTC, peer-to-peer entre los dos móviles. El servidor
+    propio solo hace de señalización (intercambio de offer/answer/ICE), nunca retransmite
+    el audio — carga en el servidor prácticamente nula por llamada activa.
+  - **Selección de red**: al iniciar la llamada se prefiere la mejor conexión disponible
+    (WiFi > 5G > 4G > 3G); si la conexión activa falla, reconexión automática con
+    backoff, sin colgar la llamada del lado del usuario si es evitable.
+  - **Emparejamiento**: código/QR efímero por sesión — sin cuentas ni dispositivos
+    guardados en el servidor. Ningún dato de emparejamiento sobrevive más allá de la
+    sesión de señalización.
+  - **Bluetooth como transporte alternativo**: fuera de alcance del primer cambio
+    (`llamada-voip-piloto-copiloto`). Se abordará en un cambio posterior porque requiere
+    streaming de audio a mano sobre socket Bluetooth — Android no ofrece un perfil de
+    "llamada móvil-a-móvil" de serie.
+
+  Backend: servicio mínimo de señalización WebRTC, sin base de datos persistente para
+  el MVP (estado de sala en memoria, vida igual a la de la llamada). Se despliega en el
+  servidor propio ya usado por moto-routes (Debian, alcanzable por Tailscale, patrón
+  SSH + `git pull` + `docker compose up -d --build` + verificación de salud — ver
+  `scripts/deploy-prod.sh` de moto-routes como referencia). Restricción explícita y
+  crítica: el servicio debe mantener una huella mínima (memoria/CPU/conexiones) para no
+  sobrecargar un servidor que ya sirve la API y el PostgreSQL de moto-routes — cualquier
+  decisión de diseño que aumente esa huella (BBDD nueva, procesos persistentes,
+  colas) se justifica explícitamente en design.md o se descarta.
+
+  Seguridad: ningún secreto, token ni credencial en código ni en artefactos versionados
+  — variables de entorno / fichero `.env.prod` no versionado en el servidor, mismo
+  patrón que moto-routes (ver su ADR-033). Si el servicio de señalización emite algún
+  token o código de sala, su alcance y vida útil se documentan en design.md. CSP estricta
+  en Tauri sin unsafe-eval ni unsafe-inline; toda conexión de red nueva (servidor de
+  señalización, STUN/TURN) exige añadir su host exacto a connect-src.
+
+  Idioma: documentación, specs y artefactos de OpenSpec en español. Código en inglés
+  (identificadores y comentarios). Las palabras estructurales del formato de spec
+  (Requirement, Scenario, WHEN/THEN, ADDED/MODIFIED/REMOVED) se mantienen en inglés
+  porque las valida la CLI.
+
+  memory/ es la memoria persistente del proyecto y OpenSpec no la sustituye:
+  memory/context.md (estado actual), memory/decisions.md (ADRs), memory/sessions/,
+  memory/metrics/events.jsonl (fallos del propio proceso de trabajar con un agente en
+  este repo). Se lee antes de empezar y se actualiza al cerrar un cambio.
+
+rules:
+  proposal:
+    - Redactar en español, conciso (1-2 páginas). El "cómo" va a design.md.
+    - >-
+      Alcance de este cambio: solo el transporte de voz por WebRTC/datos con
+      emparejamiento efímero. Bluetooth, cuentas de usuario y cualquier persistencia
+      son explícitamente no-goals — si aparece la tentación de incluirlos, es scope
+      creep, se anota como fuera de alcance y se propone como cambio futuro.
+    - Revisar memory/decisions.md antes de proponer, por si ya existe una ADR relevante.
+
+  specs:
+    - Prosa en español; Requirement / Scenario / WHEN / THEN en inglés (los valida la CLI).
+    - >-
+      Cada Scenario debe ser verificable por un test automatizado (Vitest o Cypress) o,
+      si solo se puede validar a mano en dispositivo Android real (calidad de audio,
+      comportamiento en background, cambio de red en movimiento), marcarlo explícitamente
+      como verificación manual.
+    - >-
+      Comportamiento observable únicamente: nada de nombres de clase, función o librería
+      concretos (ni "WebRTC", ni el nombre de un SDK) en el propio escenario.
+    - >-
+      Incluir escenarios de error y de límite: sin cobertura de red, caída de la conexión
+      a mitad de llamada, código de sala inválido o caducado, servidor de señalización
+      no disponible.
+    - >-
+      Ante una ambigüedad en el requisito, preguntar al usuario antes de escribir el
+      escenario. Nunca resolverla con una suposición silenciosa.
+
+  design:
+    - >-
+      Las decisiones duraderas viven en memory/decisions.md como ADR numerada; en
+      design.md se registra la decisión y se enlaza la ADR, nunca se duplica su
+      contenido. El lenguaje/framework concreto del servicio de señalización (todavía
+      sin decidir) se resuelve aquí, con alternativas descartadas y el porqué,
+      priorizando huella mínima sobre el servidor por encima de otras consideraciones.
+    - >-
+      Toda dependencia nueva (npm o Cargo) requiere justificación explícita en
+      Decisions, con la alternativa nativa que se descarta y por qué. Dependencias
+      mínimas.
+    - >-
+      Considerar siempre la restricción Android/WebView de Tauri: CSP y connect-src,
+      permisos en capabilities/, comportamiento en segundo plano (una llamada activa
+      no debe cortarse al minimizar la app), y coste de un puente nativo si hiciera
+      falta acceso a APIs no cubiertas por Tauri (selección de red, audio en foreground
+      service).
+    - >-
+      Detallar el servidor de señalización: protocolo exacto, formato de los mensajes,
+      vida útil del código de sala, qué pasa si un lado se desconecta, y cómo se
+      despliega sobre el servidor compartido con moto-routes sin interferir con él.
+
+  tasks:
+    - >-
+      Ordenar por TDD: toda tarea que cambie comportamiento empieza por su test en rojo
+      y después la implementación mínima que lo pone en verde.
+    - Cada tarea debe caber en una sesión y ser verificable por sí sola.
+    - No se crean issues de GitHub. tasks.md es la única trazabilidad de progreso.
+    - >-
+      Incluir tarea explícita de verificación en dispositivo Android real para calidad
+      de audio, comportamiento con la app en segundo plano, y cambio de red en
+      movimiento (perder cobertura y recuperarla).
+    - >-
+      Cerrar con una tarea de actualización de memory/context.md y, si procede, de
+      memory/decisions.md.
+
+operations:
+  apply:
+    guidance:
+      - >-
+        TDD estricto RED-GREEN-REFACTOR, ejecutando los tests de verdad en cada ciclo.
+      - >-
+        Antes de marcar una tarea completada: tests (Vitest), tsc --noEmit, ESLint sin
+        warnings, y en Rust cargo test + cargo clippy -- -D warnings + cargo fmt --check.
+      - >-
+        Implementar lo mínimo que satisface el escenario. Scope creep (Bluetooth,
+        cuentas, persistencia) se detiene y se pregunta, nunca se amplía por cuenta
+        propia.
+      - >-
+        Tipos estrictos: nada de any en TypeScript; en Rust ningún unwrap()/expect() sin
+        justificación escrita.
+      - >-
+        No instalar ninguna dependencia npm o Cargo, ni aprovisionar nada en el
+        servidor propio, sin confirmarlo antes con el usuario.
+      - >-
+        Ningún secreto real se escribe nunca en un artefacto del cambio, en un mensaje
+        de commit ni en el propio código.
+      - >-
+        Si durante la implementación aparece un gap, una ambigüedad o una contradicción
+        entre el código y los artefactos del cambio, detenerse y comunicarlo.
+
+  archive:
+    guidance:
+      - >-
+        Antes de archivar se pasa el gate de revisión, obligatorio. El resultado se
+        escribe en review.md dentro del directorio del cambio.
+      - review.md abre con una sección CRÍTICO con seguridad (secretos, CSP, tokens de sala) y despliegue sobre el servidor compartido.
+      - >-
+        Mapear cada Requirement y Scenario del delta spec contra el test que lo valida.
+        Los de verificación manual se listan aparte con su estado real.
+      - >-
+        Veredicto explícito: APPROVED, APPROVED WITH MINOR ISSUES, CHANGES REQUESTED o
+        BLOCKED. Un problema de seguridad o de huella sobre el servidor compartido es
+        BLOCKED.
+      - Al archivar, actualizar memory/context.md con el estado resultante.

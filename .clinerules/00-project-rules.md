@@ -8,7 +8,6 @@ Este proyecto sigue **Spec-Driven Development con OpenSpec**. No se escribe cód
 
 **`openspec/config.yaml` es el source of truth del proyecto**: stack, convenciones, diseño, seguridad, disciplina TDD y el gate de revisión. La CLI lo inyecta automáticamente al escribir artefactos y al ejecutar `apply`/`archive`, así que no lo repitas aquí ni lo copies a ningún artefacto. Este fichero solo recoge lo que aplica **fuera** de ese flujo.
 
-> **Pendiente**: `openspec/config.yaml` todavía no tiene `context:`/`rules:` rellenos.
 
 ## Flujo de Git
 
@@ -27,10 +26,8 @@ Este proyecto sigue **Spec-Driven Development con OpenSpec**. No se escribe cód
 
 ## Reglas de edición (aplican siempre, también en un fix suelto sin cambio abierto)
 
-> **Pendiente**: confirmar antes de darlas por definitivas (ver mismo aviso en `CLAUDE.md`).
-
 - **`data-cy` obligatorio**: todo elemento interactivo o localizable por un test lleva `data-cy="<contexto>-<tipo>-<accion>"` único.
-- **Nunca hardcodear** color, fuente, espaciado, sombra ni radio.
+- **Nunca hardcodear** color, fuente, espaciado, sombra ni radio: siempre `var(--token)` de `src/shared/styles/tokens.css`.
 - **Sin CSS inline** salvo animación o posicionamiento dinámico justificado.
 - **Componentes compartidos** van en `src/shared/`, nunca duplicados entre dominios.
 - **JSDoc conciso** en todo símbolo exportado.
