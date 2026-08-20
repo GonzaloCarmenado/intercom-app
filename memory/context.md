@@ -2,77 +2,86 @@
 
 ## Identidad
 - **Nombre**: Intercom App
-- **Propósito**: Intercomunicador de voz P2P/red local. Target prioritario Android.
-- **Repositorio**: D:\Git\Otros\intercom-app
+- **Propósito**: la app actúa ella misma como intercomunicador de voz entre piloto y
+  copiloto de la misma moto (uno pegado al otro), sin depender de hardware tipo
+  Cardo/Sena. Target prioritario Android.
+- **Repositorio**: D:\Git\Otros\intercom-app (público, `https://github.com/GonzaloCarmenado/intercom-app`)
 
 ## Stack Tecnológico
-- **Frontend**: TypeScript + Vite + Web Components nativos (sin framework)
-- **Backend móvil/desktop**: Rust (Tauri 2)
-- **Persistencia local**: SQLite vía `@tauri-apps/plugin-sql` (dependencia añadida, sin uso todavía)
-- **Comunicación de voz**: WebRTC P2P entre los dos móviles (piloto/copiloto de la
-  misma moto), señalización mínima en servidor propio, emparejamiento por código/QR
-  efímero sin BBDD persistente. Bluetooth como transporte alternativo queda fuera del
-  primer cambio. Detalle completo en `openspec/config.yaml` (`context:`).
+- **Frontend**: TypeScript + Vite + Web Components nativos (sin framework), patrón
+  `.element.ts/.css` + `.service.ts` + `.transform.ts` + `.types.ts` + `.spec.ts`,
+  igual que moto-routes. Vitest + ESLint (strictTypeChecked + stylistic + jsdoc),
+  cobertura mínima 80%.
+- **Backend móvil/desktop**: Rust + Tauri 2.
+- **Persistencia local**: SQLite vía `@tauri-apps/plugin-sql` (dependencia añadida,
+  sin uso todavía — el primer cambio no necesita persistencia).
+- **Servicio de señalización**: Go (`signaling/`), independiente del frontend.
+- **Comunicación de voz**: WebRTC P2P entre los dos móviles, señalización mínima en
+  servidor propio (sin BBDD), emparejamiento por código efímero. Detalle completo en
+  `openspec/config.yaml` (`context:`).
 
-## Estado actual
-- 2026-08-20: estructura general (OpenSpec + gobernanza + scaffold de Tauri) generada
-  y subida a `https://github.com/GonzaloCarmenado/intercom-app` (público, rama `master`).
-- 2026-08-20: definida la arquitectura de comunicación con el usuario (ver
-  `openspec/config.yaml`). Abierta rama `feature/llamada-voip-piloto-copiloto` para el
-  primer cambio de OpenSpec (`llamada-voip-piloto-copiloto`): llamada VoIP entre piloto
-  y copiloto, sin Bluetooth ni persistencia.
-- Backend: se reutilizará el servidor propio de moto-routes (Debian, Tailscale, mismo
-  patrón de despliegue SSH — ver `scripts/deploy-prod.sh` en moto-routes). Restricción
-  crítica: huella mínima para no sobrecargar ese servidor, ya que sirve la API y el
-  PostgreSQL de moto-routes.
+## Estado actual (2026-08-20)
+Cambio `llamada-voip-piloto-copiloto` en `/opsx:apply`, bloques 0-6 completos y
+**mergeados a `master`** (PR #1). Bloque 7 (verificación con dispositivos Android
+reales) empezado pero no cerrado — ver más abajo. Bloque 8 (cierre) sin empezar.
+
+### Backend real desplegado y funcionando
+- `wss://debian.taildf3dab.ts.net/intercom-ws/ws` — servidor Debian compartido con
+  moto-routes, expuesto vía Tailscale Funnel **por path** (`/intercom-ws`), coexistiendo
+  con la ruta raíz `/` de `apps/api` sin tocarla.
+- Contenedor `intercom-signaling-signaling-1`, proyecto Docker Compose
+  `intercom-signaling` (nombre explícito — ver ADR-004, evita colisión con el proyecto
+  "docker" de moto-routes, que vive en la misma ruta relativa `infra/docker/`).
+- Probado de extremo a extremo desde fuera del tailnet (creación de sala real por
+  WebSocket público).
+
+### Bloque 7 — pendiente de verificación de campo
+- Smoke test hecho en emulador Android apuntando al backend real: la app compila,
+  instala y carga sin errores de CSP ni crash con la configuración de producción
+  (`VITE_SIGNALING_WS_URL` real, CSP con host exacto). **No pude completar la
+  interacción**: los taps sintéticos de `adb input tap`/`touchscreen swipe` no
+  disparan el `click` de los botones dentro de esta WebView de Tauri en este
+  emulador — probado con varias variantes, sin resultado. Limitación de la
+  herramienta de automatización, no confirmado como bug de la app.
+- Las tres tareas reales de este bloque (7.1 llamada completa piloto-copiloto,
+  7.2 background/pantalla bloqueada, 7.3 cambio de red en carretera) **siguen
+  necesitando dos dispositivos Android reales y una persona probándolo a mano** —
+  son verificación manual por diseño (spec.md), no automatizable ni por mí ni por
+  un emulador.
+
+## Progreso técnico por bloque
+- **0** (spike bloqueante): confirmado en Android real (realme GT 2 Pro) que
+  `getUserMedia`/`RTCPeerConnection` funcionan en la WebView de Tauri. El
+  "Permission denied" inicial era por falta de `MODIFY_AUDIO_SETTINGS` en el
+  manifest junto a `RECORD_AUDIO` — wry ya trae el puente de permisos, no hizo
+  falta código Kotlin nuevo.
+- **1** (`signaling/`, Go): sala en memoria con TTL, WebSocket con reenvío de
+  señalización, rate limiting por IP, colgar + reconexión con margen de gracia de
+  60s vía token por participante (ADR-002).
+- **2-3** (`src/pairing/`, `src/call/`): `pairing-screen` se sustituye a sí mismo
+  por `call-screen` al emparejar (`peer-joined`), y viceversa al colgar o recibir
+  `peer-left` — sin componente orquestador, cada pantalla se sustituye a sí misma
+  en el DOM.
+- **4** (red y reconexión): `network.transform.ts` (ranking puro WiFi>5G>4G>3G) +
+  `network.service.ts` (detección real — ADR-003: ninguna API web distingue 5G de
+  4G de verdad). Reconexión de señalización con backoff exponencial (1s→8s, techo
+  60s) + `pc.restartIce()` al recuperar, sin repetir el emparejamiento.
+- **5** (seguridad): CSP estricta con host real, sin `unsafe-eval`.
+- **6** (infra): Dockerfile + compose + script de despliegue, verificado con build
+  y arranque reales tanto en local como en el servidor de producción.
 
 ## Próximo hito
-- Continuar `/opsx:apply` de `llamada-voip-piloto-copiloto` en el bloque 7
-  (verificación en dos dispositivos Android reales) — pendiente de un segundo
-  dispositivo/persona para probar la llamada real piloto-copiloto.
+- Verificación de campo del bloque 7 con dos móviles reales (pendiente del usuario).
+- Cerrar el bloque 8 (memoria/decisiones) y archivar el cambio cuando 7 esté hecho.
 
-## Despliegue real (bloques 5-6, 2026-08-20)
-- Backend desplegado y verificado de extremo a extremo en el servidor compartido
-  con moto-routes (`debian`, Tailscale): `wss://debian.taildf3dab.ts.net/intercom-ws/ws`
-  (Funnel por path, coexistiendo con la ruta raíz `/` de `apps/api` sin tocarla).
-  Contenedor `intercom-signaling-signaling-1`, proyecto Compose `intercom-signaling`.
-- PR #1 mergeado a `master` para poder desplegar (el flujo normal exige archivar
-  antes de PR, pero se acordó con el usuario adelantar el merge para no bloquear
-  el despliegue real — bloques 7-8 quedan para un cambio/PR posterior sobre esta
-  misma base).
-- Bug real encontrado al desplegar (ADR-004): sin `name:` explícito, Docker Compose
-  deriva el proyecto del directorio contenedor (`docker`, coincide con moto-routes
-  por vivir ambos en `infra/docker/`) — se vio como aviso de "orphan container
-  docker-api-1" (el de moto-routes). Corregido antes de que causara daño real.
+## Entorno de desarrollo (esta máquina)
+- JDK de Android Studio es la 25, que Gradle 8.14.3 no soporta — fijar `JAVA_HOME` a
+  `C:\Program Files\Java\jdk-24` al lanzar `tauri android dev` (ruta local, no
+  versionar). Lanzarlo desde **PowerShell**, no Bash: el hook `rtk` se cuelga sin
+  producir salida al combinarse con un `JAVA_HOME=...` inline.
+- Acceso SSH al servidor de producción vía Tailscale: `ssh gonzalo@debian` (usuario
+  confirmado, mismo que usa moto-routes).
 
-## Progreso de `llamada-voip-piloto-copiloto`
-- Bloques 0-4 completados el 2026-08-20 (spike, servicio de señalización en Go,
-  pantalla de emparejamiento, pantalla de llamada, selección de red + reconexión).
-  59 tests (Vitest) + 17 tests (Go) en verde, ESLint y `tsc --noEmit` limpios,
-  cobertura >80% en las tres métricas.
-- Bloque 4: `src/shared/network.transform.ts` (ranking WiFi>5G>4G>3G, función pura) +
-  `network.service.ts` (detección real, best-effort — ver ADR-003: ninguna API web
-  distingue 5G de 4G de verdad, solo WiFi vs. datos móviles es fiable). Reconexión de
-  señalización con backoff exponencial (1s→8s) y presupuesto de 60s (igual que el
-  margen de gracia del servidor) en `call.service.ts`, con renegociación ICE
-  (`pc.restartIce()`) al recuperar conexión — sin repetir el emparejamiento.
-- Tarea 0.1 (spike bloqueante) completada en dispositivo Android real (realme GT 2
-  Pro): `getUserMedia`/`RTCPeerConnection` funcionan en la WebView de Tauri. Causa del
-  "Permission denied" inicial: faltaba `MODIFY_AUDIO_SETTINGS` en el manifest junto a
-  `RECORD_AUDIO`. No hizo falta código Kotlin nuevo — wry ya trae el puente de permisos.
-- Bloque 1: `signaling/` (módulo Go independiente) — sala en memoria con TTL, WebSocket
-  con reenvío de señalización, rate limiting por IP, colgar + reconexión con margen de
-  gracia de 60s vía token por participante (ADR-002, gap real encontrado en 1.9/1.10).
-- Bloques 2-3: `src/pairing/` y `src/call/` (Web Components). Al no existir todavía
-  Vitest/ESLint en el proyecto, se montaron en el bloque 2 (config igual que
-  moto-routes: strictTypeChecked + stylistic + jsdoc, cobertura mínima 80%).
-  `pairing-screen` se sustituye a sí mismo por `call-screen` en cuanto se empareja
-  (mensaje `peer-joined`), y `call-screen` hace lo inverso al colgar o al recibir
-  `peer-left` del servidor — sin componente orquestador superior, cada pantalla se
-  sustituye a sí misma en el DOM.
-- Entorno de desarrollo Android en esta máquina: JDK de Android Studio es la 25, que
-  Gradle 8.14.3 no soporta — hay que fijar `JAVA_HOME` a `C:\Program Files\Java\jdk-24`
-  al lanzar `tauri android dev` (no versionar esa ruta, es local de esta máquina).
-  Además, lanzar ese comando desde Bash pasa por el hook `rtk`, que se queda colgado
-  sin producir salida cuando se combina con un `JAVA_HOME=...` inline — usar el
-  tool de PowerShell para `tauri android dev`, no Bash.
+## Fallos de proceso registrados (ver `memory/metrics/events.jsonl` para el detalle)
+- Push directo a `master` dos veces tras mergear el PR #1 (en vez de rama+PR) —
+  corregido en el momento, sin daño real.
