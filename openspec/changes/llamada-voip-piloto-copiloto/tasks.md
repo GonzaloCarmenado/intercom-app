@@ -114,9 +114,19 @@
 - [x] 6.4 Script de despliegue propio (`scripts/deploy-prod.sh`), adaptado del de
       moto-routes: SSH por Tailscale, `git pull --ff-only`, `docker compose up -d
       --build`, verificación de salud contra `/ping`.
-- [ ] 6.5 Confirmar puerto/ruta de exposición vía Tailscale Funnel en el servidor real
+- [x] 6.5 Confirmar puerto/ruta de exposición vía Tailscale Funnel en el servidor real
       (Open Question de design.md) y documentarlo en design.md una vez resuelto.
-- [ ] 6.6 Desplegar y verificar salud del servicio en el servidor real.
+      `https://debian.taildf3dab.ts.net/intercom-ws` (path-based, sin tocar la ruta
+      raíz que ya usa `apps/api`).
+- [x] 6.6 Desplegar y verificar salud del servicio en el servidor real. Desplegado y
+      probado de extremo a extremo (creación de sala real vía WebSocket público desde
+      fuera del tailnet). Al desplegar se encontró y corrigió un problema real:
+      Docker Compose deriva el nombre de proyecto del directorio (`docker`), que
+      coincidía con el de moto-routes por vivir ambos en `infra/docker/` — se vio
+      como aviso de "orphan container docker-api-1" (el de moto-routes). Corregido
+      añadiendo `name: intercom-signaling` explícito en `docker-compose.prod.yml`
+      antes de que causara ningún daño real (Compose solo avisa, no toca contenedores
+      ajenos sin `--remove-orphans`).
 
 ## 7. Verificación manual en dispositivo Android real
 

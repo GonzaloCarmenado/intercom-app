@@ -27,8 +27,23 @@
   PostgreSQL de moto-routes.
 
 ## Próximo hito
-- Continuar `/opsx:apply` de `llamada-voip-piloto-copiloto` en el bloque 5 (seguridad
-  y configuración Tauri: CSP, permisos Android).
+- Continuar `/opsx:apply` de `llamada-voip-piloto-copiloto` en el bloque 7
+  (verificación en dos dispositivos Android reales) — pendiente de un segundo
+  dispositivo/persona para probar la llamada real piloto-copiloto.
+
+## Despliegue real (bloques 5-6, 2026-08-20)
+- Backend desplegado y verificado de extremo a extremo en el servidor compartido
+  con moto-routes (`debian`, Tailscale): `wss://debian.taildf3dab.ts.net/intercom-ws/ws`
+  (Funnel por path, coexistiendo con la ruta raíz `/` de `apps/api` sin tocarla).
+  Contenedor `intercom-signaling-signaling-1`, proyecto Compose `intercom-signaling`.
+- PR #1 mergeado a `master` para poder desplegar (el flujo normal exige archivar
+  antes de PR, pero se acordó con el usuario adelantar el merge para no bloquear
+  el despliegue real — bloques 7-8 quedan para un cambio/PR posterior sobre esta
+  misma base).
+- Bug real encontrado al desplegar (ADR-004): sin `name:` explícito, Docker Compose
+  deriva el proyecto del directorio contenedor (`docker`, coincide con moto-routes
+  por vivir ambos en `infra/docker/`) — se vio como aviso de "orphan container
+  docker-api-1" (el de moto-routes). Corregido antes de que causara daño real.
 
 ## Progreso de `llamada-voip-piloto-copiloto`
 - Bloques 0-4 completados el 2026-08-20 (spike, servicio de señalización en Go,
