@@ -48,6 +48,34 @@
   usuario, no un fallo silencioso. Detalle completo en
   `openspec/changes/llamada-voip-piloto-copiloto/design.md`.
 
+## ADR-002: `llamada-voip-piloto-copiloto` — token de reconexión por participante, sin el cual el servidor no puede distinguir un reconnect legítimo de un desconocido
+
+- **Fecha**: 2026-08-20
+- **Estado**: Aceptada
+- **Contexto**: Implementando las tareas 1.9/1.10 (colgar + reconexión con margen de
+  gracia) apareció un hueco real en `design.md`: el protocolo solo identificaba una
+  sala por su código de 6 caracteres, pensado para teclearse. Si un participante se
+  cae de la señalización (no cuelga, simplemente pierde red) y el servidor mantiene
+  la sala abierta un margen de gracia para permitir que vuelva, no hay forma de
+  distinguir "es el mismo participante reconectando" de "alguien más intentó ese
+  código durante la ventana de gracia" usando solo el código de sala.
+- **Decisión**: al crear o unirse a una sala, el servidor emite también un token
+  aleatorio largo (24 caracteres, `crypto/rand`) propio de ese participante — nunca
+  se teclea, solo lo maneja la app. Para reconectar, el cliente presenta
+  `?code=X&token=Y`; el servidor solo acepta la reconexión si el token pertenece a
+  un participante ya emparejado en esa sala. El código de sala sigue siendo lo único
+  que el usuario ve/teclea; el token es plumbing invisible.
+- **Alternativas consideradas**: no reconectar nunca (bastaría con volver a
+  emparejar desde cero) — descartada, contradice el requisito ya acordado con el
+  usuario de reconexión automática sin repetir el emparejamiento. Reconectar sin
+  ningún tipo de credencial, confiando en que adivinar un código de 6 caracteres
+  durante una ventana de 60s es poco probable — descartada: el propio `design.md`
+  ya pide rate limiting por fuerza bruta sobre el código, sería inconsistente
+  dejar la reconexión sin protección equivalente.
+- **Consecuencias**: el protocolo de señalización tiene tres modos según los
+  parámetros de la conexión (crear / unir / reconectar) en vez de dos. Detalle
+  completo en `openspec/changes/llamada-voip-piloto-copiloto/design.md`.
+
 ## ADR-NNN: Título de la decisión
 
 - **Fecha**: YYYY-MM-DD

@@ -8,23 +8,24 @@
 
 ## 1. Servicio de señalización (Go)
 
-- [ ] 1.1 Test: crear una sala devuelve un código válido y único.
-- [ ] 1.2 Implementación mínima: endpoint/mensaje de creación de sala (mapa en memoria,
+- [x] 1.1 Test: crear una sala devuelve un código válido y único.
+- [x] 1.2 Implementación mínima: endpoint/mensaje de creación de sala (mapa en memoria,
       código con `crypto/rand`).
-- [ ] 1.3 Test: unirse con un código válido y sin segundo participante conecta a los dos
+- [x] 1.3 Test: unirse con un código válido y sin segundo participante conecta a los dos
       lados de la sala.
-- [ ] 1.4 Implementación: flujo de unión + intercambio de mensajes de señalización
+- [x] 1.4 Implementación: flujo de unión + intercambio de mensajes de señalización
       (offer/answer/ICE candidates) entre los dos WebSocket de una misma sala.
-- [ ] 1.5 Test: unirse con un código inexistente, caducado, o de una sala ya ocupada
+- [x] 1.5 Test: unirse con un código inexistente, caducado, o de una sala ya ocupada
       devuelve el error correspondiente sin crear ninguna conexión.
-- [ ] 1.6 Implementación: expiración de sala sin segundo participante (TTL), rechazo de
+- [x] 1.6 Implementación: expiración de sala sin segundo participante (TTL), rechazo de
       unión a sala ya ocupada.
-- [ ] 1.7 Test: rate limiting de intentos de unión por IP.
-- [ ] 1.8 Implementación: límite de intentos de unión por IP en la ventana de validez
+- [x] 1.7 Test: rate limiting de intentos de unión por IP.
+- [x] 1.8 Implementación: límite de intentos de unión por IP en la ventana de validez
       del código.
-- [ ] 1.9 Test: cierre de sala al colgar explícito y tras margen de gracia sin conexión.
-- [ ] 1.10 Implementación: ciclo de vida completo de la sala (colgar, timeout de gracia
-      para permitir reconexión).
+- [x] 1.9 Test: cierre de sala al colgar explícito y tras margen de gracia sin conexión.
+- [x] 1.10 Implementación: ciclo de vida completo de la sala (colgar, timeout de gracia
+      para permitir reconexión). Requirió añadir un token de reconexión por participante
+      (gap real encontrado durante la implementación, no estaba en design.md — ver ADR-002).
 
 ## 2. Emparejamiento (frontend)
 

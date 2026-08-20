@@ -95,6 +95,21 @@ por el mismo patrón SSH + Tailscale que `scripts/deploy-prod.sh` de moto-routes
 que usa moto-routes, ver su ADR-036) en un puerto distinto al de `apps/api`, para que
 el redeploy de uno nunca dependa del otro.
 
+### Protocolo de señalización y reconexión (detalle encontrado durante `apply`, ADR-002)
+Mensajes JSON sobre WebSocket. El servidor nunca interpreta offer/answer/ICE, solo los
+reenvía. Ciclo de vida:
+- `GET /ws` (sin `code`): crea sala, responde `{"type":"created","code","token"}`.
+- `GET /ws?code=X` (sin `token`): se une como segundo participante, responde a ambos
+  `{"type":"peer-joined"}` (al segundo, con su propio `token`).
+- `GET /ws?code=X&token=Y`: reconexión — solo se acepta si `token` pertenece a un
+  participante ya emparejado de esa sala. Sin esto, el servidor no puede distinguir
+  "el mismo peer reconectando" de "un desconocido que adivinó el código durante el
+  margen de gracia" — gap real no cubierto en el diseño inicial, ver ADR-002.
+- Colgar explícito: mensaje `{"type":"hangup"}` cierra la sala para los dos de inmediato.
+- Caída sin hangup: margen de gracia de 60s con aviso `{"type":"reconnecting"}` al otro
+  lado; reconexión a tiempo → `{"type":"peer-reconnected"}`; sin reconexión →
+  `{"type":"peer-left","reason":"timeout"}` y cierre.
+
 ### Seguridad
 - Código de sala generado con un generador aleatorio criptográfico (`crypto/rand`),
   no secuencial ni predecible.
