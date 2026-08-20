@@ -130,6 +130,14 @@
 
 ## 7. Verificación manual en dispositivo Android real
 
+> Smoke test hecho en emulador contra el backend real de producción (2026-08-20): la
+> app compila, instala y carga sin errores de CSP ni crash con la configuración real
+> (`VITE_SIGNALING_WS_URL` + CSP con host exacto). No se pudo completar la
+> interacción — los taps sintéticos de `adb input` no disparan el `click` de los
+> botones en esta WebView/emulador, probado con varias variantes. Las tres tareas de
+> abajo siguen sin hacer: son verificación manual con dos móviles reales por diseño
+> (`spec.md`), no automatizable.
+
 - [ ] 7.1 Llamada completa piloto-copiloto con dos dispositivos Android reales,
       calidad de audio aceptable en condiciones normales.
 - [ ] 7.2 Llamada activa sobrevive a minimizar la app / bloquear pantalla en ambos
