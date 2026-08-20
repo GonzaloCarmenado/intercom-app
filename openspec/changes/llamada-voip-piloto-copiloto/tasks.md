@@ -60,22 +60,29 @@
 
 ## 4. Selección de red y reconexión
 
-- [ ] 4.1 Test: con varias conexiones disponibles, se prefiere la de mayor calidad
-      (WiFi > 5G > 4G > 3G) al iniciar la llamada.
-- [ ] 4.2 Implementación: consulta del tipo de red activa antes de iniciar la llamada.
-- [ ] 4.3 Test: sin ninguna conexión de datos disponible, no se intenta iniciar la
+- [x] 4.1 Test: con varias conexiones disponibles, se prefiere la de mayor calidad
+      (WiFi > 5G > 4G > 3G) al iniciar la llamada. `pickBestNetwork` es una función
+      pura y testeable; ver ADR-003 sobre por qué 5G/4G no se pueden distinguir de
+      verdad con las APIs web estándar (el dato real que alimenta esta función en un
+      dispositivo real es más pobre de lo que el ranking soporta).
+- [x] 4.2 Implementación: consulta del tipo de red activa antes de iniciar la llamada
+      (`network.service.ts`, best-effort vía Network Information API).
+- [x] 4.3 Test: sin ninguna conexión de datos disponible, no se intenta iniciar la
       llamada y se informa al usuario.
-- [ ] 4.4 Implementación: comprobación previa de conectividad.
-- [ ] 4.5 Test: corte de red breve durante la llamada activa dispara reconexión
+- [x] 4.4 Implementación: comprobación previa de conectividad (`hasConnectivity()` en
+      los botones crear/unirse de `pairing.element.ts`).
+- [x] 4.5 Test: corte de red breve durante la llamada activa dispara reconexión
       automática con backoff, sin pedir reemparejamiento.
-- [ ] 4.6 Implementación: lógica de reconexión (backoff exponencial con techo) +
-      renegociación ICE tras recuperar red.
-- [ ] 4.7 Test: estado "reconectando" es visualmente distinto de "en llamada".
-- [ ] 4.8 Implementación: estado de UI para reconexión.
-- [ ] 4.9 Test: si la reconexión no tiene éxito tras el tiempo máximo, la llamada
+- [x] 4.6 Implementación: lógica de reconexión (backoff exponencial con techo) +
+      renegociación ICE (`pc.restartIce()` + nueva offer) tras recuperar red. Requirió
+      añadir `onClose` a `SignalingConnection` (no existía) y un `reconnect()` en
+      `CallSetup` que `pairing.element.ts` construye con el código/token guardados.
+- [x] 4.7 Test: estado "reconectando" es visualmente distinto de "en llamada".
+- [x] 4.8 Implementación: estado de UI para reconexión (ya cubierto desde el bloque 3).
+- [x] 4.9 Test: si la reconexión no tiene éxito tras el tiempo máximo, la llamada
       termina con el mensaje correspondiente.
-- [ ] 4.10 Implementación: límite de tiempo total de reintento antes de dar la llamada
-      por perdida.
+- [x] 4.10 Implementación: límite de tiempo total de reintento (60s, igual que el
+      margen de gracia del servidor) antes de dar la llamada por perdida.
 
 ## 5. Seguridad y configuración Tauri
 

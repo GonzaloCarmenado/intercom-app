@@ -23,6 +23,11 @@ vi.mock("../call/call.service", () => ({
   startCall: (setup: unknown, handlers: unknown): unknown => startCallMock(setup, handlers),
 }));
 
+const hasConnectivityMock = vi.fn(() => true);
+vi.mock("../shared/network.service", () => ({
+  hasConnectivity: (): boolean => hasConnectivityMock(),
+}));
+
 function emit(connectionIndex: number, message: SignalingMessage): void {
   for (const handler of handlersByConnection[connectionIndex] ?? []) {
     handler(message);
@@ -38,6 +43,7 @@ describe("<pairing-screen>", () => {
     connectToSignalingMock.mockClear();
     sendMock.mockClear();
     closeMock.mockClear();
+    hasConnectivityMock.mockReturnValue(true);
   });
 
   function mount(): HTMLElement {
@@ -164,6 +170,7 @@ describe("<pairing-screen>", () => {
       ?.querySelector<HTMLButtonElement>('[data-cy="pairing-button-crear"]')
       ?.click();
 
+    emit(0, { type: "created", code: "ABC123", token: "creator-tok" });
     emit(0, { type: "peer-joined" });
 
     expect(document.body.querySelector("pairing-screen")).toBeNull();
@@ -193,6 +200,25 @@ describe("<pairing-screen>", () => {
     );
   });
 
+  it("passes a reconnect function that redials with the room code and this participant's token", async () => {
+    mount();
+    document
+      .querySelector("pairing-screen")
+      ?.shadowRoot?.querySelector<HTMLButtonElement>('[data-cy="pairing-button-crear"]')
+      ?.click();
+
+    emit(0, { type: "created", code: "ABC123", token: "creator-tok" });
+    emit(0, { type: "peer-joined" });
+
+    const setupArg = startCallMock.mock.calls[0][0] as { reconnect: () => Promise<unknown> };
+    connectToSignalingMock.mockClear();
+    await setupArg.reconnect();
+
+    expect(connectToSignalingMock).toHaveBeenCalledWith(
+      expect.stringMatching(/code=ABC123.*token=creator-tok/),
+    );
+  });
+
   it("does nothing when the join button is clicked without a code", () => {
     const el = mount();
     el.shadowRoot
@@ -200,5 +226,36 @@ describe("<pairing-screen>", () => {
       ?.click();
 
     expect(connectToSignalingMock).not.toHaveBeenCalled();
+  });
+
+  it("does not attempt to create a room without a data connection", () => {
+    hasConnectivityMock.mockReturnValue(false);
+    const el = mount();
+
+    el.shadowRoot
+      ?.querySelector<HTMLButtonElement>('[data-cy="pairing-button-crear"]')
+      ?.click();
+
+    expect(connectToSignalingMock).not.toHaveBeenCalled();
+    const errorEl = el.shadowRoot?.querySelector('[data-cy="pairing-text-error"]');
+    expect(errorEl?.textContent).toBeTruthy();
+    expect(errorEl?.hasAttribute("hidden")).toBe(false);
+  });
+
+  it("does not attempt to join a room without a data connection", () => {
+    hasConnectivityMock.mockReturnValue(false);
+    const el = mount();
+    const input = el.shadowRoot?.querySelector<HTMLInputElement>(
+      '[data-cy="pairing-input-codigo"]',
+    );
+    input!.value = "XYZ999";
+
+    el.shadowRoot
+      ?.querySelector<HTMLButtonElement>('[data-cy="pairing-button-unirse"]')
+      ?.click();
+
+    expect(connectToSignalingMock).not.toHaveBeenCalled();
+    const errorEl = el.shadowRoot?.querySelector('[data-cy="pairing-text-error"]');
+    expect(errorEl?.textContent).toBeTruthy();
   });
 });

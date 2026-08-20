@@ -1,5 +1,6 @@
 import "../call/call.element";
 import type { CallRole } from "../call/call.types";
+import { hasConnectivity } from "../shared/network.service";
 import styles from "./pairing.element.css?inline";
 import { connectToSignaling } from "./pairing.service";
 import { buildSignalingUrl } from "./pairing.transform";
@@ -28,6 +29,8 @@ template.innerHTML = `
 export class PairingScreenElement extends HTMLElement {
   private connection: SignalingConnection | null = null;
   private callRole: CallRole | null = null;
+  private roomCode: string | null = null;
+  private myToken: string | null = null;
 
   constructor() {
     super();
@@ -39,6 +42,8 @@ export class PairingScreenElement extends HTMLElement {
     this.shadowRoot
       ?.querySelector<HTMLButtonElement>('[data-cy="pairing-button-crear"]')
       ?.addEventListener("click", () => {
+        if (!this.requireConnectivity()) return;
+        this.roomCode = null;
         this.startConnection(buildSignalingUrl(signalingBaseUrl(), {}), "offerer");
       });
 
@@ -47,8 +52,16 @@ export class PairingScreenElement extends HTMLElement {
       ?.addEventListener("click", () => {
         const code = this.codeInput()?.value.trim();
         if (!code) return;
+        if (!this.requireConnectivity()) return;
+        this.roomCode = code;
         this.startConnection(buildSignalingUrl(signalingBaseUrl(), { code }), "answerer");
       });
+  }
+
+  private requireConnectivity(): boolean {
+    if (hasConnectivity()) return true;
+    this.showError("no_connection");
+    return false;
   }
 
   private codeInput(): HTMLInputElement | null | undefined {
@@ -67,12 +80,15 @@ export class PairingScreenElement extends HTMLElement {
   private handleMessage(message: SignalingMessage): void {
     switch (message.type) {
       case "created":
+        this.roomCode = message.code;
+        this.myToken = message.token;
         this.showCode(message.code);
         break;
       case "error":
         this.showError(message.reason);
         break;
       case "peer-joined":
+        if (message.token) this.myToken = message.token;
         this.transitionToCall();
         break;
       case "peer-reconnected":
@@ -89,12 +105,22 @@ export class PairingScreenElement extends HTMLElement {
   }
 
   private transitionToCall(): void {
-    if (!this.connection || !this.callRole) return;
+    if (!this.connection || !this.callRole || !this.roomCode || !this.myToken) return;
+    const code = this.roomCode;
+    const token = this.myToken;
     const callScreen = document.createElement("call-screen") as HTMLElement & {
-      start: (setup: { connection: SignalingConnection; role: CallRole }) => void;
+      start: (setup: {
+        connection: SignalingConnection;
+        role: CallRole;
+        reconnect: () => Promise<SignalingConnection>;
+      }) => void;
     };
     this.replaceWith(callScreen);
-    callScreen.start({ connection: this.connection, role: this.callRole });
+    callScreen.start({
+      connection: this.connection,
+      role: this.callRole,
+      reconnect: () => reconnectToRoom(code, token),
+    });
   }
 
   private showCode(code: string): void {
@@ -125,9 +151,24 @@ function errorMessage(reason: string): string {
       return "Esa sala ya tiene dos personas conectadas.";
     case "rate_limited":
       return "Demasiados intentos. Espera un momento y vuelve a intentarlo.";
+    case "no_connection":
+      return "No hay conexión de datos disponible. Comprueba tu WiFi o datos móviles.";
     default:
       return "No se ha podido conectar. Inténtalo de nuevo.";
   }
+}
+
+/**
+ * Redial a la señalización tras una caída, usando el código de sala y el
+ * token de este participante. No espera confirmación explícita del
+ * servidor (no la manda, ver hub.go): si el redial no sirvió de verdad, la
+ * conexión resultante se cerrará enseguida y el propio bucle de
+ * reconexión de call.service.ts lo detectará y lo reintentará.
+ */
+function reconnectToRoom(code: string, token: string): Promise<SignalingConnection> {
+  return Promise.resolve(
+    connectToSignaling(buildSignalingUrl(signalingBaseUrl(), { code, token })),
+  );
 }
 
 if (!customElements.get("pairing-screen")) {

@@ -15,19 +15,29 @@ export function connectToSignaling(
   factory: WebSocketFactory = defaultFactory,
 ): SignalingConnection {
   const ws = factory(url);
-  const handlers: ((message: SignalingMessage) => void)[] = [];
+  const messageHandlers: ((message: SignalingMessage) => void)[] = [];
+  const closeHandlers: (() => void)[] = [];
 
   ws.addEventListener("message", (event) => {
     const raw = (event as MessageEvent<string>).data;
     const message = JSON.parse(raw) as SignalingMessage;
-    for (const handler of handlers) {
+    for (const handler of messageHandlers) {
       handler(message);
+    }
+  });
+
+  ws.addEventListener("close", () => {
+    for (const handler of closeHandlers) {
+      handler();
     }
   });
 
   return {
     onMessage(handler): void {
-      handlers.push(handler);
+      messageHandlers.push(handler);
+    },
+    onClose(handler): void {
+      closeHandlers.push(handler);
     },
     send(message): void {
       ws.send(JSON.stringify(message));

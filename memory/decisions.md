@@ -76,11 +76,32 @@
   parámetros de la conexión (crear / unir / reconectar) en vez de dos. Detalle
   completo en `openspec/changes/llamada-voip-piloto-copiloto/design.md`.
 
-## ADR-NNN: Título de la decisión
+## ADR-003: `llamada-voip-piloto-copiloto` — detección de red WiFi/cellular best-effort, sin distinguir 5G/4G/3G de verdad
 
-- **Fecha**: YYYY-MM-DD
-- **Estado**: Aceptada | Superseded por ADR-MMM
-- **Contexto**: qué problema obliga a decidir.
-- **Decisión**: qué se decide.
-- **Alternativas consideradas**: qué se descartó y por qué.
-- **Consecuencias**: qué implica a futuro.
+- **Fecha**: 2026-08-20
+- **Estado**: Aceptada
+- **Contexto**: `openspec/config.yaml` y la propuesta de este cambio piden "seleccionar
+  la mejor red disponible (WiFi > 5G > 4G > 3G)". Implementando la tarea 4.1/4.2 se
+  confirmó que ninguna API web estándar (Network Information API,
+  `navigator.connection`) distingue 5G de 4G de verdad: `effectiveType` es una
+  estimación por rendimiento medido, no por generación de red real, y su valor
+  máximo es literalmente `"4g"` — cubre 4G y 5G indistintamente. Distinguirlos de
+  verdad exigiría un puente nativo a `TelephonyManager` de Android (comando Tauri +
+  código Kotlin), fuera de alcance de un cambio ya centrado en la propia llamada.
+- **Decisión**: `network.service.ts` reporta lo que el navegador puede saber de
+  verdad — `wifi`, `4g`, `3g` o `unknown` — sin inventar una distinción 5G que la
+  plataforma no ofrece. La función de ranking (`pickBestNetwork`, en
+  `network.transform.ts`) sí soporta un tipo `"5g"` como categoría de mayor
+  prioridad que `"4g"`, preparada para el día que exista una fuente de datos real
+  que la alimente (el puente nativo mencionado arriba), pero hoy nunca se le pasa
+  ese valor.
+- **Alternativas consideradas**: construir ya el puente nativo a `TelephonyManager`
+  — descartado por alcance (cambio de infraestructura Android, no de la llamada en
+  sí; candidato a cambio futuro si la calidad real en carretera lo justifica).
+  Fingir que `effectiveType: "4g"` siempre es 5G o siempre es 4G — descartado por
+  ser directamente falso, induciría a error en vez de informar.
+- **Consecuencias**: la app nunca mostrará "conectado por 5G" de forma fiable hasta
+  que exista ese puente nativo. La selección real de red (WiFi vs. datos móviles)
+  sí funciona con las APIs web — es solo la granularidad dentro de "datos móviles"
+  la que queda limitada. Detalle en `openspec/changes/llamada-voip-piloto-copiloto/`
+  (`design.md` y `tasks.md`, tarea 4.1).

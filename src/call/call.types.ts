@@ -17,4 +17,10 @@ export type CallState =
 export interface CallSetup {
   connection: SignalingConnection;
   role: CallRole;
+  /**
+   * Redial a la señalización usando el código de sala y el token de este
+   * participante — lo que permite reconectar sin repetir el emparejamiento.
+   * Rechaza si el intento de redial falla (código caducado, sin red, etc.).
+   */
+  reconnect: () => Promise<SignalingConnection>;
 }

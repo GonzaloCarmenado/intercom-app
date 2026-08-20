@@ -17,6 +17,10 @@ class FakeWebSocket extends EventTarget {
   emitMessage(payload: SignalingMessage): void {
     this.dispatchEvent(new MessageEvent("message", { data: JSON.stringify(payload) }));
   }
+
+  emitClose(): void {
+    this.dispatchEvent(new CloseEvent("close"));
+  }
 }
 
 describe("connectToSignaling", () => {
@@ -48,5 +52,16 @@ describe("connectToSignaling", () => {
     connection.close();
 
     expect(fakeSocket.closed).toBe(true);
+  });
+
+  it("notifies registered handlers when the underlying socket closes", () => {
+    const fakeSocket = new FakeWebSocket();
+    const connection = connectToSignaling("ws://example.test/ws", () => fakeSocket as unknown as WebSocket);
+
+    const handler = vi.fn();
+    connection.onClose(handler);
+    fakeSocket.emitClose();
+
+    expect(handler).toHaveBeenCalled();
   });
 });

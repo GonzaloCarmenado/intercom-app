@@ -33,8 +33,9 @@ describe("<call-screen>", () => {
 
   function fakeSetup(): CallSetup {
     return {
-      connection: { onMessage: vi.fn(), send: vi.fn(), close: vi.fn() },
+      connection: { onMessage: vi.fn(), onClose: vi.fn(), send: vi.fn(), close: vi.fn() },
       role: "offerer",
+      reconnect: vi.fn(),
     };
   }
 

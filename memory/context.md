@@ -27,13 +27,20 @@
   PostgreSQL de moto-routes.
 
 ## Próximo hito
-- Continuar `/opsx:apply` de `llamada-voip-piloto-copiloto` en el bloque 4 (selección
-  de red y reconexión).
+- Continuar `/opsx:apply` de `llamada-voip-piloto-copiloto` en el bloque 5 (seguridad
+  y configuración Tauri: CSP, permisos Android).
 
 ## Progreso de `llamada-voip-piloto-copiloto`
-- Bloques 0-3 completados el 2026-08-20 (spike, servicio de señalización en Go,
-  pantalla de emparejamiento, pantalla de llamada). 39 tests (Vitest) + 17 tests (Go)
-  en verde, ESLint y `tsc --noEmit` limpios.
+- Bloques 0-4 completados el 2026-08-20 (spike, servicio de señalización en Go,
+  pantalla de emparejamiento, pantalla de llamada, selección de red + reconexión).
+  59 tests (Vitest) + 17 tests (Go) en verde, ESLint y `tsc --noEmit` limpios,
+  cobertura >80% en las tres métricas.
+- Bloque 4: `src/shared/network.transform.ts` (ranking WiFi>5G>4G>3G, función pura) +
+  `network.service.ts` (detección real, best-effort — ver ADR-003: ninguna API web
+  distingue 5G de 4G de verdad, solo WiFi vs. datos móviles es fiable). Reconexión de
+  señalización con backoff exponencial (1s→8s) y presupuesto de 60s (igual que el
+  margen de gracia del servidor) en `call.service.ts`, con renegociación ICE
+  (`pc.restartIce()`) al recuperar conexión — sin repetir el emparejamiento.
 - Tarea 0.1 (spike bloqueante) completada en dispositivo Android real (realme GT 2
   Pro): `getUserMedia`/`RTCPeerConnection` funcionan en la WebView de Tauri. Causa del
   "Permission denied" inicial: faltaba `MODIFY_AUDIO_SETTINGS` en el manifest junto a

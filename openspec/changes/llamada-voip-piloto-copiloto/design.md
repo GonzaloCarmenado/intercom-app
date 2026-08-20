@@ -95,6 +95,13 @@ por el mismo patrón SSH + Tailscale que `scripts/deploy-prod.sh` de moto-routes
 que usa moto-routes, ver su ADR-036) en un puerto distinto al de `apps/api`, para que
 el redeploy de uno nunca dependa del otro.
 
+### Selección de red (detalle encontrado durante `apply`, ADR-003)
+La distinción WiFi > 5G > 4G > 3G del contexto del proyecto no es implementable tal
+cual con APIs web estándar — ninguna distingue 5G de 4G de verdad. `network.service.ts`
+reporta `wifi` / `4g` / `3g` / `unknown` (best-effort vía Network Information API);
+`pickBestNetwork` sí soporta un nivel `5g` en el ranking, preparado para una fuente de
+datos real (puente nativo a `TelephonyManager`) si algún día hace falta. Ver ADR-003.
+
 ### Protocolo de señalización y reconexión (detalle encontrado durante `apply`, ADR-002)
 Mensajes JSON sobre WebSocket. El servidor nunca interpreta offer/answer/ICE, solo los
 reenvía. Ciclo de vida:

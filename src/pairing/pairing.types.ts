@@ -17,6 +17,7 @@ export type SignalingMessage =
 /** Conexión abierta hacia el servicio de señalización. */
 export interface SignalingConnection {
   onMessage(handler: (message: SignalingMessage) => void): void;
+  onClose(handler: () => void): void;
   send(message: unknown): void;
   close(): void;
 }
