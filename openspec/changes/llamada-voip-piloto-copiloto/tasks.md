@@ -101,15 +101,19 @@
 
 ## 6. Servicio de señalización: infraestructura y despliegue
 
-- [ ] 6.1 `Dockerfile` del servicio de señalización (build multi-stage Go, imagen
-      mínima).
-- [ ] 6.2 `infra/docker/docker-compose.prod.yml` propio de este repo, con
-      `mem_limit`/`cpus` explícitos, independiente del compose de moto-routes.
-- [ ] 6.3 `infra/docker/.env.prod.example` versionado como plantilla (sin valores
-      reales) + `.env.prod` real creado a mano por SSH en el servidor (no versionado).
-- [ ] 6.4 Script de despliegue propio (`scripts/deploy-prod.sh`), adaptado del de
+- [x] 6.1 `Dockerfile` del servicio de señalización (build multi-stage Go, imagen
+      mínima). Verificado con un build y arranque reales en local (`docker build` +
+      `docker run` + `curl /ping` → 200), no solo revisión de código.
+- [x] 6.2 `infra/docker/docker-compose.prod.yml` propio de este repo, con
+      `mem_limit`/`cpus` explícitos, independiente del compose de moto-routes. Puerto
+      publicado solo en `127.0.0.1` (Tailscale Funnel es la única vía de entrada
+      real). Validado con `docker compose config`.
+- [x] 6.3 `infra/docker/.env.prod.example` versionado como plantilla (sin valores
+      reales). El `.env.prod` real se crea a mano por SSH en el servidor — pendiente
+      de 6.6, requiere acceso al servidor real.
+- [x] 6.4 Script de despliegue propio (`scripts/deploy-prod.sh`), adaptado del de
       moto-routes: SSH por Tailscale, `git pull --ff-only`, `docker compose up -d
-      --build`, verificación de salud.
+      --build`, verificación de salud contra `/ping`.
 - [ ] 6.5 Confirmar puerto/ruta de exposición vía Tailscale Funnel en el servidor real
       (Open Question de design.md) y documentarlo en design.md una vez resuelto.
 - [ ] 6.6 Desplegar y verificar salud del servicio en el servidor real.
